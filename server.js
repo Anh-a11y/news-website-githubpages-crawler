@@ -121,12 +121,114 @@ async function proxyFetch(req, requestUrl, res) {
   }
 }
 
+
+// Proxy ảnh từ CDN Dân Trí để trang GitHub Pages có thể hiển thị ảnh.
+// Chỉ cho phép CDN cụ thể nhằm tránh biến endpoint thành open proxy.
+async function proxyImage(req, requestUrl, res) {
+  const origin = req.headers.origin || "";
+
+  if (!isAllowedOrigin(origin)) {
+    return sendApi(req, res, 403, JSON.stringify({ error: "Origin này chưa được phép gọi API." }));
+  }
+
+  if (req.method === "OPTIONS") {
+    return sendApi(req, res, 204, "", "text/plain; charset=utf-8");
+  }
+
+  if (req.method !== "GET") {
+    return sendApi(req, res, 405, JSON.stringify({ error: "Chỉ hỗ trợ GET." }));
+  }
+
+  const raw = requestUrl.searchParams.get("url");
+  if (!raw) {
+    return sendApi(req, res, 400, JSON.stringify({ error: "Thiếu tham số url." }));
+  }
+
+  let target;
+  try {
+    target = new URL(raw);
+  } catch (_) {
+    return sendApi(req, res, 400, JSON.stringify({ error: "URL ảnh không hợp lệ." }));
+  }
+
+  if (target.protocol !== "https:" || target.hostname.toLowerCase() !== "cdnphoto.dantri.com.vn") {
+    return sendApi(req, res, 400, JSON.stringify({ error: "Chỉ cho phép ảnh HTTPS từ cdnphoto.dantri.com.vn." }));
+  }
+
+  let referer = "https://dantri.com.vn/";
+  const requestedReferer = requestUrl.searchParams.get("referer");
+  if (requestedReferer) {
+    try {
+      const parsedReferer = new URL(requestedReferer);
+      if (isDanTriHost(parsedReferer.hostname.toLowerCase())) {
+        referer = parsedReferer.href;
+      }
+    } catch (_) {
+      // Giữ referer mặc định nếu query không hợp lệ.
+    }
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
+
+  try {
+    const upstream = await fetch(target.href, {
+      redirect: "follow",
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132 Safari/537.36",
+        "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        "Referer": referer
+      }
+    });
+
+    if (!upstream.ok) {
+      return sendApi(req, res, upstream.status, JSON.stringify({
+        error: `CDN ảnh Dân Trí trả về HTTP ${upstream.status}.`
+      }));
+    }
+
+    let finalUrl;
+    try {
+      finalUrl = new URL(upstream.url);
+    } catch (_) {
+      return sendApi(req, res, 502, JSON.stringify({ error: "Nguồn ảnh trả về URL không hợp lệ." }));
+    }
+
+    if (finalUrl.protocol !== "https:" || finalUrl.hostname.toLowerCase() !== "cdnphoto.dantri.com.vn") {
+      return sendApi(req, res, 502, JSON.stringify({ error: "Ảnh chuyển hướng sang máy chủ không được phép." }));
+    }
+
+    const contentType = upstream.headers.get("content-type") || "";
+    if (!contentType.toLowerCase().startsWith("image/")) {
+      return sendApi(req, res, 415, JSON.stringify({ error: "Nguồn không trả về dữ liệu ảnh." }));
+    }
+
+    const bytes = Buffer.from(await upstream.arrayBuffer());
+    if (bytes.length > 8 * 1024 * 1024) {
+      return sendApi(req, res, 413, JSON.stringify({ error: "Ảnh vượt quá giới hạn 8 MB." }));
+    }
+
+    return sendApi(req, res, 200, bytes, contentType, {
+      "Cache-Control": "public, max-age=3600"
+    });
+  } catch (error) {
+    const message = error.name === "AbortError"
+      ? "Tải ảnh quá thời gian chờ."
+      : `Không kết nối được tới CDN ảnh Dân Trí: ${error.message}`;
+    return sendApi(req, res, 502, JSON.stringify({ error: message }));
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
   if (requestUrl.pathname === "/healthz") {
     return send(res, 200, JSON.stringify({ ok: true, service: "news-website-crawler-api" }), "application/json; charset=utf-8");
   }
   if (requestUrl.pathname === "/api/fetch") return proxyFetch(req, requestUrl, res);
+  if (requestUrl.pathname === "/api/image") return proxyImage(req, requestUrl, res);
   if (req.method === "OPTIONS") return send(res, 204, "");
   if (req.method !== "GET" && req.method !== "HEAD") return send(res, 405, "Method not allowed");
 
