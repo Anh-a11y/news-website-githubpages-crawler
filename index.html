@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Website tin tức thực hành với chức năng đọc tin, lọc chuyên mục và crawler.">
+  <title>Tin Tức 24H</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="Tin Tức 24H - Trang chủ">
+        <span class="brand-mark">24</span>
+        <span><strong>TIN TỨC 24H</strong><small>Cập nhật tin tức mỗi ngày</small></span>
+      </a>
+      <a class="crawler-link" href="pages/crawler.html"><span aria-hidden="true">↻</span> Crawler tin tức</a>
+    </div>
+  </header>
+
+  <nav id="navbar" class="navbar" aria-label="Danh mục tin tức">
+    <div class="nav-inner"><span class="loading-text">Đang tải chuyên mục…</span></div>
+  </nav>
+
+  <main class="container">
+    <div class="section-heading">
+      <div><p class="eyebrow">TIN TỨC MỚI NHẤT</p><h1 id="page-title">Tin nổi bật</h1></div>
+      <div class="search-wrap"><label class="sr-only" for="search-input">Tìm kiếm bài viết</label><input id="search-input" type="search" placeholder="Tìm tiêu đề bài viết…"><button id="search-button" type="button">Tìm</button></div>
+    </div>
+    <p id="data-notice" class="data-notice" hidden></p>
+    <section id="featured" class="featured-section" aria-labelledby="featured-heading">
+      <div class="section-subhead"><h2 id="featured-heading">Tin nổi bật</h2><span id="featured-count" class="count-label"></span></div>
+      <div id="featured-posts" class="featured-grid"><p class="loading-text">Đang tải bài viết…</p></div>
+    </section>
+    <section id="news-list" class="latest-section" aria-labelledby="latest-heading">
+      <div class="section-subhead"><h2 id="latest-heading">Tin mới nhất</h2><span id="latest-count" class="count-label"></span></div>
+      <div id="posts-container" class="news-list"><p class="loading-text">Đang tải danh sách…</p></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-grid">
+      <div class="footer-about"><a class="footer-brand" href="index.html">TIN TỨC 24H</a><p>Website tin tức thực hành, minh họa quy trình tổ chức dữ liệu, hiển thị bài viết và crawler bằng JavaScript.</p></div>
+      <div><h2>Liên kết nhanh</h2><a href="index.html">Trang chủ</a><a href="index.html#news-list">Tin mới nhất</a><a href="pages/crawler.html">Crawler tin tức</a><a href="mailto:contact@example.com">Liên hệ</a></div>
+      <div><h2>Chuyên mục</h2><a href="index.html?category=Thế%20giới">Thế giới</a><a href="index.html?category=Thời%20sự">Thời sự</a><a href="index.html?category=Bất%20động%20sản">Bất động sản</a><a href="index.html?category=Thể%20thao">Thể thao</a></div>
+      <div><h2>Thông tin liên hệ</h2><p>Email: contact@example.com</p><p>Địa chỉ: Thông tin dùng cho bài tập thực hành</p><div class="social-links"><a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">f</a><a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="YouTube">▶</a><a href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" aria-label="TikTok">♪</a></div></div>
+    </div>
+    <div class="copyright">© 2026 Tin Tức 24H. Dự án thực hành học tập.</div>
+  </footer>
+  <script src="js/app.js"></script>
+</body>
+</html>
